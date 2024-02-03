@@ -1,0 +1,314 @@
+﻿// Framework
+
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+
+#define LENGTH 20
+#define MENUFILE "fMenu.cfg"
+#define FIELDS_FILE "fFields.cfg"
+#define DATAFILE "framework.dat"
+
+
+FILE *fpFields;
+FILE *fpDatafile;
+int fieldsCount;
+char field[LENGTH];
+
+
+int getFieldsCount()
+{
+        int counter = 0;
+        while (fgets(field, LENGTH, fpFields))
+        {
+                counter++;
+        }
+        return counter;
+}
+
+
+void create()
+{        
+        fpDatafile = fopen(DATAFILE, "a");
+        fputc('A', fpDatafile);
+        fclose(fpDatafile);
+        rewind(fpFields);
+
+
+        while (fgets(field, LENGTH, fpFields))
+        {
+                field[strlen(field) - 1] = '\0';
+                printf("Enter %s: ", field);
+                scanf(" %[^\n]s", field);
+                //strcat(field, "\n");
+                fpDatafile = fopen(DATAFILE, "a");
+                fwrite(field, sizeof(char), LENGTH, fpDatafile);
+                fclose(fpDatafile);
+        }
+}
+
+
+void showAll()
+{
+        char fieldData[LENGTH];
+        int sizeOfDatafile; 
+
+
+        fpDatafile = fopen(DATAFILE, "r");
+        fseek(fpDatafile, 0, SEEK_END);
+        sizeOfDatafile = ftell(fpDatafile);
+        rewind(fpDatafile);
+
+
+        // printf("\nSize of file: %d\n", sizeOfDatafile);
+
+
+        while (ftell(fpDatafile) < sizeOfDatafile)//!feof(fpDatafile))
+        {
+                char status;
+                rewind(fpFields);
+                status = fgetc(fpDatafile);
+
+
+                if (status == 'A')
+                {
+                        printf("\n_____________________________________________________\n\n");
+                        while (fgets(field, LENGTH, fpFields))
+                        {
+                                if (fread(fieldData, sizeof(char), LENGTH, fpDatafile))
+                                {
+                                        field[strlen(field) - 1] = '\0';
+                                        //fieldData[strlen(fieldData) - 1] = '\0';
+                                        printf("%s: %s\n", field, fieldData);
+                                }
+                        }
+                }else
+                {
+                        fseek(fpDatafile, fieldsCount*LENGTH, SEEK_CUR);
+                }
+        }
+        fclose(fpDatafile);
+}
+
+
+char* getRecordId()
+{
+        char Id[LENGTH];
+        printf("\nEnter Id : ");
+        scanf(" %[^\n]s", Id);
+
+
+        return Id;
+}
+
+
+int getRecordPosition(char *searchId)
+{
+        int sizeOfDatafile;
+        char fieldData[LENGTH];
+
+
+        fpDatafile = fopen(DATAFILE, "r");
+        fseek(fpDatafile, 0, SEEK_END);
+        sizeOfDatafile = ftell(fpDatafile);
+        rewind(fpDatafile);
+
+
+        while (ftell(fpDatafile) < sizeOfDatafile)//!feof(fpDatafile))
+        {
+                char status;
+                status = fgetc(fpDatafile);
+
+
+                if (status == 'A')
+                {
+                        fread(fieldData, sizeof(char), LENGTH, fpDatafile);
+                        if (strcmp(fieldData, searchId) == 0)
+                        {
+                                return ftell(fpDatafile) - LENGTH;
+                        }else
+                        {
+                                fseek(fpDatafile, (fieldsCount - 1)*LENGTH, SEEK_CUR);
+                        }
+                }else
+                {
+                        fseek(fpDatafile, fieldsCount*LENGTH, SEEK_CUR);
+                }
+        }
+        fclose(fpDatafile);
+        // printf("\nId: %s not found\n", searchId);
+        return -1;
+}
+
+
+void search(char *searchId)
+{
+        int position = getRecordPosition(searchId);
+
+
+        // printf("\nPosition: %d\n", position);
+
+
+        if (position != -1)
+        {
+                char fieldData[LENGTH];
+                fpDatafile = fopen(DATAFILE, "r");
+                fseek(fpDatafile, position, SEEK_SET);
+                rewind(fpFields);
+                printf("\n_____________________________________________________\n\n");
+                while (fgets(field, LENGTH, fpFields) && fread(fieldData, sizeof(char), LENGTH, fpDatafile))
+                {
+                        field[strlen(field) - 1] = '\0';
+                        //fieldData[strlen(fieldData) - 1] = '\0';
+                        printf("%s: %s\n", field, fieldData);
+                }
+        }
+}
+
+
+void update(char *searchId)
+{
+        int position = getRecordPosition(searchId);
+
+
+        if (position != -1)
+        {
+                int counter = 1, updateChoice;
+                char fieldData[LENGTH];
+
+
+                rewind(fpFields);
+                fgets(field, LENGTH, fpFields);
+
+
+                while (fgets(field, LENGTH, fpFields))
+                {
+                        printf(" %d. %s", counter++, field);
+                }
+
+
+                printf("\nEnter what to update: ");
+                scanf("%d", &updateChoice);
+
+
+                if (updateChoice > 0 && updateChoice < fieldsCount)
+                {
+                        rewind(fpFields);
+
+
+                        for (counter = 0; counter <= updateChoice; counter++)
+                        {
+                                fgets(field, LENGTH, fpFields);
+                        }
+
+
+                        field[strlen(field) - 1] = '\0';
+                        printf("\nEnter %s: ", field);
+                        scanf(" %[^\n]s", fieldData);
+
+
+                        fpDatafile = fopen(DATAFILE, "r+");
+                        fseek(fpDatafile, position + (updateChoice * LENGTH), SEEK_SET);
+                        fwrite(fieldData, sizeof(char), LENGTH, fpDatafile);
+                        fclose(fpDatafile);
+                }
+        }
+}
+
+
+void delete(char *searchId)
+{
+        int position = getRecordPosition(searchId);
+
+
+        if (position != -1)
+        {
+                fpDatafile = fopen(DATAFILE, "r+");
+                fseek(fpDatafile, position - 1, SEEK_SET);
+                fputc('D', fpDatafile);
+                fclose(fpDatafile);
+        }
+}
+
+
+void menu()
+{
+        int choice;
+        char searchId[LENGTH];
+        FILE *fpMenu;
+
+
+        fpMenu = fopen(MENUFILE, "r");
+        fseek(fpMenu, 0, SEEK_END);
+        int size = ftell(fpMenu) + 1;
+        fseek(fpMenu, 0, SEEK_SET);
+        char menu[size];
+        fread(menu, sizeof(char), size - 1, fpMenu);
+        fclose(fpMenu);
+
+
+        menu[size] = '\0';
+
+
+        fpFields = fopen(FIELDS_FILE, "r");
+        fieldsCount = getFieldsCount();
+        //printf("Fields count: %d\n", fieldsCount);
+
+
+        printf("\n%s\n", menu);
+
+
+        printf("Choose one of the above operations: ");
+        scanf("%d", &choice);
+
+
+        
+        switch (choice)
+        {
+                case 1 :         create();
+                                        break;
+
+
+                case 2 :        showAll();
+                                        break;
+
+
+                case 3 :        printf("\nTo search:\n");
+                                        strcpy(searchId, getRecordId());
+                                        search(searchId);
+                                        break;
+
+
+                case 4 :        printf("\nTo update:\n");
+                                        strcpy(searchId, getRecordId());
+                                        update(searchId);
+                                        break;
+
+
+                case 5 :        printf("\nTo delete:\n");
+                                        strcpy(searchId, getRecordId());
+                                        delete(searchId);
+                                        break;
+
+
+                case 6 :        printf("\nExited!\n");
+                                        fclose(fpFields);
+                                        exit(1);
+                                        break;
+
+
+                default:        printf("\nInvalid input, Try again!\n");
+                                        break;
+        }
+}
+
+
+void main()
+{
+        do
+        {
+                menu();
+        }while(1);
+}
