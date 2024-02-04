@@ -304,7 +304,6 @@ void menu()
     {
             case 1 :  
                 create();
-               
                 break;
 
 
@@ -314,37 +313,25 @@ void menu()
 
 
             case 3 : 
-               // printf("\nTo search:\n");
-               // strcpy(searchId, getRecordId());
             	search();
-               // search(searchId);
                 break;
 
 
             case 4 : 
-                //printf("\nTo update:\n");
-                // strcpy(searchId, getRecordId());
-                // update(searchId);
                 update();
                 break;
 
 
             case 5 :        
-            	//printf("\nTo delete:\n");
-	            // strcpy(searchId, getRecordId());
-                // delete(searchId);
                 delete_();
                 break;
-            case 6:
-            	
-
+	    
             case 0 :
                 printf("\nExited!\n");
                 fclose(fpFields);
                 exit(0);
                 break;
-
-
+	    
             default: 
                 printf("\nInvalid input, Try again!\n");
                 break;
