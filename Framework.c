@@ -23,12 +23,6 @@ int recordPosition;
 char field[LENGTH];
 int customMessageCount;
 
-void printNotFoundMessage()
-{
-	printf("Hosteller details not found\n");
-}
-
-
 int getFieldsCount()
 {
 	fpFields = fopen(FIELDS_FILE, "r");
@@ -92,7 +86,10 @@ void getCustomizedMessages()
 	fclose(fpCustomizedMessages);
 	
 }	
-
+void printNotFoundMessage()
+{
+	printf("Hosteller details not found\n");
+}
 void getRecordId()
 {
 	printf("\nEnter ID:");
